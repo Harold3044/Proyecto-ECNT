@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Fase actual | **Bloque A (F1 + F2): COMPLETADO, en espera de aprobación** |
-| Fases completadas | 0, 1, 2 (el Bloque A está pendiente de aprobación) |
-| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque B (F3 + F4). |
+| Fase actual | **Bloque B (F3 + F4): COMPLETADO, en espera de aprobación** |
+| Fases completadas | 0, 1, 2 (aprobadas); 3, 4 (pendientes de aprobación) |
+| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque C (F5 API). |
 | Última actualización | 2026-11-17 |
 
 ## Registro por fase
@@ -67,7 +67,20 @@
 
 **Pendiente**: aprobación de la variable objetivo y de los hallazgos H‑1 (relación inversa por posible subregistro) y H‑2 (conteos pequeños).
 
+- Aprobado por el usuario (2026-11-17): variable objetivo `tasa_mort_ecnt_std` y Bloque A.
+
+### Bloque B — F3 Procesamiento + F4 Machine Learning (2026-11-17)
+
+**F3**: `schemas`, `io`, `validation`, `eda`, `cleaning` (14 operaciones con linaje), `plots`.
+**F4**: `splitting` (4 estrategias, 4 proporciones, semilla), `features` (ranking, VIF, OLS), `models` (línea base, lineal, Ridge, RF, GB), `evaluation` (CV, bootstrap, intervalos, por grupo, regla de 1 EE), `experiment`, `registry` (joblib + SHA‑256 + predicción sobre datos nuevos).
+**ETL ampliado**: `externo_otras_regiones_modelado.csv` (917 municipios reales fuera del Caribe) para validación externa.
+**Experimento real**: `scripts/experimento_base.py` → `reports/experimento_base/` (ver su README). Elegido: Random Forest, RMSE de prueba 46,9 y R² 0,33 (IC 95 % de R²: −0,01 a 0,52); mejora del 14 % sobre la línea base; validación externa R² 0,08.
+
+**Pruebas**: 47 aprobadas (`pytest`), cobertura de `ecnt_core` 82 %; `ruff` sin errores.
+**Archivos nuevos**: `src/ecnt_core/{schemas,io,validation,eda,cleaning,plots,splitting,features,models,evaluation,experiment,registry}.py`, `tests/{conftest,test_processing,test_ml}.py`, `scripts/experimento_base.py`, `docs/MOTOR_DATOS_ML.md`, `reports/experimento_base/*`.
+**Modificados**: `scripts/construir_dataset_caribe.py` (todo el país), `pyproject.toml` (largo de línea 120).
+
 ## Módulos implementados
 
-- `ecnt_core.config`, `ecnt_core.sources.dane` (NBI, defunciones, población, tasa estandarizada por edad).
+- `ecnt_core`: config, sources.dane, schemas, io, validation, eda, cleaning, plots, splitting, features, models, evaluation, experiment, registry.
 - `ecnt_api.main` (solo `/health`).

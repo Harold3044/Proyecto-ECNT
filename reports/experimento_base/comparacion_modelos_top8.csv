@@ -1,0 +1,6 @@
+algoritmo,modelo,rmse_cv_media,rmse_cv_de,mae_cv_media,r2_cv_media,rmse_test,mae_test,r2_test,rmse_entrenamiento,n_pliegues
+baseline,Línea base (media),54.692,5.705,44.329,-0.047,57.172,46.074,-0.0,54.547,15
+linear,Regresión lineal múltiple,51.389,5.773,40.955,0.06,49.263,39.978,0.258,48.328,15
+ridge,Regresión múltiple regularizada (Ridge),51.136,5.46,40.925,0.07,49.152,39.775,0.261,48.343,15
+random_forest,Random Forest,47.141,5.954,38.686,0.218,47.663,36.3,0.305,31.931,15
+gradient_boosting,Gradient Boosting,47.876,6.652,39.056,0.191,48.957,36.773,0.267,25.212,15

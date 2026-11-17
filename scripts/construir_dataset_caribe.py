@@ -8,6 +8,7 @@ Entradas (ver docs/datos/):
 Salidas:
   data/processed/caribe_panel_municipio_anio.csv   municipio × año (2018-2021): defunciones, población, tasas
   data/processed/caribe_modelado.csv               municipio (corte transversal) para modelado
+  data/processed/externo_otras_regiones_modelado.csv  municipios fuera del Caribe (validación externa)
   data/processed/manifiesto.json                   hashes de entradas/salidas y parámetros
 
 Uso:  python scripts/construir_dataset_caribe.py
@@ -58,10 +59,10 @@ def decrypt_if_needed(year: int):
     return dst
 
 
-def load_deaths() -> pd.DataFrame:
-    frames = [dane.read_deaths_cuadro5_2018(decrypt_if_needed(2018), DEPTOS)]
+def load_deaths(deptos: list[str]) -> pd.DataFrame:
+    frames = [dane.read_deaths_cuadro5_2018(decrypt_if_needed(2018), deptos)]
     for y in YEARS[1:]:
-        frames.append(dane.read_deaths_cuadro5_unificado(decrypt_if_needed(y), y, DEPTOS))
+        frames.append(dane.read_deaths_cuadro5_unificado(decrypt_if_needed(y), y, deptos))
     return pd.concat(frames, ignore_index=True)
 
 
@@ -85,7 +86,7 @@ def main() -> None:
     PROCESSED.mkdir(parents=True, exist_ok=True)
     print("1/5 NBI…")
     nbi = dane.read_nbi(NBI_FILE)
-    nbi = nbi[nbi["cod_depto"].isin(DEPTOS)].copy()
+    deptos_pais = sorted(nbi["cod_depto"].unique())
 
     print("2/5 Población (archivo grande, ~1 min)…")
     all_deptos = sorted({f"{i:02d}" for i in range(5, 100)})
@@ -93,7 +94,7 @@ def main() -> None:
     pop_col = pop_all[(pop_all.anio == 2018) & (pop_all.area == "total")]
     std = pop_col[[f"pob_{g}" for g in AGE_LABELS]].sum()
     std_weights = pd.Series(std.values / std.sum(), index=AGE_LABELS)  # estándar: Colombia 2018
-    pop = pop_all[pop_all["divipola"].str[:2].isin(DEPTOS)]
+    pop = pop_all
     pop_tot = pop[pop.area == "total"].drop(columns="area")
     pop_area = pop.pivot_table(index=["divipola", "anio"], columns="area", values="pob_total", aggfunc="sum")
     pop_area = pop_area.rename(columns={"cab": "pob_cabecera", "resto": "pob_resto"})[
@@ -101,7 +102,7 @@ def main() -> None:
     ]
 
     print("3/5 Defunciones 2018-2021…")
-    deaths = aggregate_deaths(load_deaths())
+    deaths = aggregate_deaths(load_deaths(deptos_pais))
 
     print("4/5 Panel municipio-año…")
     panel = pop_tot.merge(pop_area.reset_index(), on=["divipola", "anio"], how="left")
@@ -116,7 +117,9 @@ def main() -> None:
     panel["periodo_pandemia"] = panel["anio"] >= 2020
     panel = panel.merge(nbi[["divipola", "departamento", "municipio"]], on="divipola", how="left")
     panel["es_sintetico"] = False
-    panel.to_csv(PROCESSED / "caribe_panel_municipio_anio.csv", index=False)
+    panel = panel[panel["departamento"].notna()]  # solo municipios presentes en el NBI
+    es_caribe = panel["divipola"].str[:2].isin(DEPTOS)
+    panel[es_caribe].to_csv(PROCESSED / "caribe_panel_municipio_anio.csv", index=False)
 
     print("5/5 Dataset de modelado…")
     p = panel[panel.anio.isin(TARGET_YEARS)]
@@ -148,7 +151,11 @@ def main() -> None:
     )
     model.insert(4, "periodo", "2018-2019")
     model["es_sintetico"] = False
-    model.to_csv(PROCESSED / "caribe_modelado.csv", index=False)
+    model["region"] = np.where(model["cod_depto"].isin(DEPTOS), "Caribe", "Otras regiones")
+    caribe = model[model.region == "Caribe"]
+    externo = model[(model.region != "Caribe") & model["tasa_mort_ecnt_std"].notna()]
+    caribe.to_csv(PROCESSED / "caribe_modelado.csv", index=False)
+    externo.to_csv(PROCESSED / "externo_otras_regiones_modelado.csv", index=False)
 
     manifest = {
         "generado": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -158,11 +165,12 @@ def main() -> None:
         "entradas": {str(f.relative_to(RAW)): sha256(f) for f in
                      [NBI_FILE, POP_FILE, *[EEVV_DIR / f"EEVV_C5_{y}_def.xls" for y in YEARS]]},
         "salidas": {
-            "caribe_panel_municipio_anio.csv": {"filas": len(panel)},
+            "caribe_panel_municipio_anio.csv": {"filas": int(es_caribe.sum())},
             "caribe_modelado.csv": {
-                "filas": len(model),
-                "objetivo_no_nulo": int(model.tasa_mort_ecnt_std.notna().sum()),
+                "filas": len(caribe),
+                "objetivo_no_nulo": int(caribe.tasa_mort_ecnt_std.notna().sum()),
             },
+            "externo_otras_regiones_modelado.csv": {"filas": len(externo)},
         },
         "pesos_estandar": std_weights.round(6).to_dict(),
     }

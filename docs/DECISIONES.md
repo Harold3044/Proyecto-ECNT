@@ -76,6 +76,14 @@ Definición propuesta de ECNT (CIE‑10), a confirmar: HTA I10–I15, diabetes E
 | AD‑11 | Python 3.12/3.13 con `venv` único en la raíz y dependencias fijadas | Simplicidad; se mantiene la separación lógica `ecnt_core` / `api` / `apps` |
 | AD‑12 | Power BI fuera del alcance; exportación CSV disponible | Duplicaría el dashboard EPS |
 
+### Decisiones del Bloque B
+| ID | Decisión | Justificación |
+|---|---|---|
+| AD‑13 | Selección de modelo: superar la línea base + regla de 1 error estándar sobre el RMSE de CV; la prueba no interviene | Evita elegir por azar de la partición o solo por R² |
+| AD‑14 | Validación externa con municipios reales de otras regiones | Datos independientes reales para el Módulo 8, sin sintéticos |
+| AD‑15 | Intervalo de predicción empírico del 90 % (cuantil del error fuera de pliegue) | Comunica la incertidumbre a la EPS |
+| AD‑16 | Variable objetivo `tasa_mort_ecnt_std` (aprobada por el usuario) | Ver `docs/datos/ESTRATEGIA_DATOS.md` |
+
 ### Respuestas recibidas
 - **D‑01**: entrega el jueves 19‑nov‑2026.
 - **D‑06**: repositorio nuevo (lo crea el usuario; el remoto se conecta cuando haya URL).

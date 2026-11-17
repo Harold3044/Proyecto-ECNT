@@ -1,0 +1,136 @@
+{
+  "seleccion": {
+    "elegido": "random_forest",
+    "razon": "Menor RMSE de CV: gradient_boosting (45.73). Umbral 1 EE = 47.32. Modelos dentro del umbral: random_forest, gradient_boosting. Se elige el más simple: random_forest. Mejora frente a la línea base: 14.1 % en RMSE de CV.",
+    "umbral_1ee": 47.31758577024395
+  },
+  "modelo_elegido": {
+    "algoritmo": "random_forest",
+    "parametros": {
+      "n_estimators": 300,
+      "max_depth": 6,
+      "min_samples_leaf": 2,
+      "max_features": "sqrt"
+    },
+    "rmse_cv_media": 47.00054444578836,
+    "rmse_cv_de": 6.001088886869043,
+    "rmse_test": 46.88909509375896,
+    "mae_test": 37.518884609094506,
+    "r2_test": 0.327374116447122,
+    "ic95_test": {
+      "mae": [
+        29.154369127846195,
+        46.09425069893336
+      ],
+      "rmse": [
+        37.62477683512404,
+        55.39300119646017
+      ],
+      "r2": [
+        -0.012333253952300683,
+        0.5183341898430769
+      ]
+    },
+    "semiancho_intervalo_90": 82.0608477865241,
+    "cobertura_intervalo_90_test": 0.925,
+    "metricas_por_grupo": [
+      {
+        "departamento": "BOLÍVAR",
+        "n": 8,
+        "mae": 20.388,
+        "rmse": 26.798,
+        "sesgo_medio": -2.562
+      },
+      {
+        "departamento": "CÓRDOBA",
+        "n": 8,
+        "mae": 45.177,
+        "rmse": 54.946,
+        "sesgo_medio": -4.99
+      },
+      {
+        "departamento": "SUCRE",
+        "n": 7,
+        "mae": 41.439,
+        "rmse": 53.241,
+        "sesgo_medio": 38.442
+      },
+      {
+        "departamento": "CESAR",
+        "n": 6,
+        "mae": 41.799,
+        "rmse": 46.377,
+        "sesgo_medio": -41.799
+      },
+      {
+        "departamento": "LA GUAJIRA",
+        "n": 4,
+        "mae": 34.333,
+        "rmse": 42.256,
+        "sesgo_medio": -30.65
+      },
+      {
+        "departamento": "ATLÁNTICO",
+        "n": 4,
+        "mae": 32.25,
+        "rmse": 38.866,
+        "sesgo_medio": 24.486
+      },
+      {
+        "departamento": "MAGDALENA",
+        "n": 2,
+        "mae": NaN,
+        "rmse": NaN,
+        "sesgo_medio": NaN
+      },
+      {
+        "departamento": "ARCHIPIÉLAGO DE SAN ANDRÉS",
+        "n": 1,
+        "mae": NaN,
+        "rmse": NaN,
+        "sesgo_medio": NaN
+      }
+    ]
+  },
+  "ols_entrenamiento": {
+    "r2": 0.34863319676976356,
+    "r2_ajustado": 0.2243265549319322,
+    "n": 157,
+    "f_pvalor": 8.017956668941731e-05
+  },
+  "validacion_externa": {
+    "baseline": {
+      "mae": 43.978670686668934,
+      "rmse": 57.224552658302485,
+      "r2": -0.009057325113582815
+    },
+    "linear": {
+      "mae": 58.855238538161124,
+      "rmse": 76.08291692159169,
+      "r2": -0.7837144716026985
+    },
+    "ridge": {
+      "mae": 42.65586497168211,
+      "rmse": 55.27504020606915,
+      "r2": 0.05852420042650652
+    },
+    "random_forest": {
+      "mae": 42.217792760715824,
+      "rmse": 54.699254602880664,
+      "r2": 0.07803625555092575
+    },
+    "gradient_boosting": {
+      "mae": 43.38077061692356,
+      "rmse": 55.886844965596914,
+      "r2": 0.03756765074512847
+    }
+  },
+  "particion": {
+    "strategy": "aleatoria",
+    "test_size": 0.2,
+    "seed": 42
+  },
+  "n_entrenamiento": 157,
+  "n_prueba": 40,
+  "bundle": "data\\storage\\modelos\\referencia"
+}

@@ -1,0 +1,6 @@
+,mae,rmse,r2
+baseline,43.979,57.225,-0.009
+linear,58.855,76.083,-0.784
+ridge,42.656,55.275,0.059
+random_forest,42.218,54.699,0.078
+gradient_boosting,43.381,55.887,0.038
