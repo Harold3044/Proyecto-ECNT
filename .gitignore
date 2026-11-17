@@ -1,0 +1,38 @@
+# Entornos
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secretos
+.env
+*.pem
+
+# Datos: nunca se versionan (fuentes descargables, ver docs/datos/)
+data/raw/*
+data/external/*
+data/interim/*
+data/processed/*
+data/storage/*
+!data/**/.gitkeep
+!data/README.md
+# Los datos sintéticos pequeños sí se versionan para pruebas reproducibles
+!data/synthetic/
+!data/synthetic/*.csv
+
+# Artefactos
+*.joblib
+*.db
+*.sqlite
+*.sqlite3
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

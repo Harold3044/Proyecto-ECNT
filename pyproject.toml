@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecnt"
+version = "0.1.0"
+description = "Plataforma de IA para estimar indicadores territoriales de ECNT asociados a determinantes sociales (Caribe colombiano)"
+requires-python = ">=3.11"
+authors = [{ name = "Grupo 05 — Harold Solano" }]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
