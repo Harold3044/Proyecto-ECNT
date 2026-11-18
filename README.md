@@ -45,7 +45,19 @@ pytest
 python scripts/construir_dataset_caribe.py                    # 1. datasets reales desde fuentes DANE
 python scripts/cargar_datos_iniciales.py --aprobar-y-publicar  # 2. carga en la plataforma + modelo publicado
 uvicorn ecnt_api.main:app --port 8000                          # 3. API → http://localhost:8000/docs
+streamlit run apps/admin/app.py --server.port 8501             # 4. Ambiente Administrador / Investigador
+streamlit run apps/eps/app.py --server.port 8502               # 5. Ambiente EPS
 ```
+
+En Windows, los pasos 3 a 5 se inician juntos con `powershell -ExecutionPolicy Bypass -File scripts\iniciar_plataforma.ps1`.
+
+| Usuario de desarrollo | Contraseña | Acceso |
+|---|---|---|
+| `admin@ecnt.local` | `Admin2026!` | Administrador (8501) y EPS (8502) |
+| `investigador@ecnt.local` | `Inv2026!` | Administrador (sin aprobar/publicar) |
+| `eps@ecnt.local` | `Eps2026!` | EPS |
+
+> Cambie estas contraseñas y `ECNT_JWT_SECRET` en `.env` antes de cualquier despliegue.
 
 Detalle de la API, endpoints y matriz de permisos: [docs/API.md](docs/API.md).
 

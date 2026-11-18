@@ -165,6 +165,19 @@ def read_population(path: str | Path, deptos: list[str], years: list[int]) -> pd
 
 
 # ---------------------------------------------------------------------------
+# Coordenadas DIVIPOLA (datos.gov.co, recurso gdxc-w37w)
+# ---------------------------------------------------------------------------
+def read_divipola_coords(path: str | Path) -> pd.DataFrame:
+    """Latitud/longitud de la cabecera municipal (DIVIPOLA DANE). Las coordenadas usan coma decimal."""
+    raw = pd.read_json(path, dtype=str)
+    return pd.DataFrame({
+        "divipola": raw["cod_mpio"].str.zfill(5),
+        "lat": pd.to_numeric(raw["latitud"].str.replace(",", ".", regex=False), errors="coerce"),
+        "lon": pd.to_numeric(raw["longitud"].str.replace(",", ".", regex=False), errors="coerce"),
+    }).dropna()
+
+
+# ---------------------------------------------------------------------------
 # Tasas
 # ---------------------------------------------------------------------------
 def age_standardized_rate(

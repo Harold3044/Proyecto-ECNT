@@ -33,6 +33,8 @@ class CompareIn(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict)
     algoritmos: list[str] = Field(default=["baseline", "linear", "ridge", "random_forest", "gradient_boosting"],
                                   min_length=2)
+    parametros: dict[str, dict[str, Any]] = Field(default_factory=dict,
+                                                  description="Hiperparámetros por algoritmo (opcional)")
 
 
 def _dv(db: Session, vid: int) -> DatasetVersion:
@@ -58,8 +60,9 @@ def create(body: ExperimentIn, request: Request, db: Session = Depends(get_db), 
 
 @router.post("/compare", status_code=201)
 def compare(body: CompareIn, request: Request, db: Session = Depends(get_db), user: Usuario = Researcher):
-    base = {k: v for k, v in body.config.items() if k != "algorithm"}
-    out = svc.compare(db, request.app.state.storage, user, _dv(db, body.dataset_version_id), base, body.algoritmos)
+    base = {k: v for k, v in body.config.items() if k not in ("algorithm", "params")}
+    out = svc.compare(db, request.app.state.storage, user, _dv(db, body.dataset_version_id), base, body.algoritmos,
+                      body.parametros)
     audit(db, user, "comparar_modelos", f"grupo:{out['grupo']}", {"algoritmos": body.algoritmos}, request)
     db.commit()
     table = pd.DataFrame(out["tabla"]).rename(columns={"nombre": "modelo"})

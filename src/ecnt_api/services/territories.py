@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pandas as pd
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -10,7 +12,29 @@ from ecnt_api.orm import Alerta, Prediccion, VersionModelo
 from ecnt_api.services.datasets import latest_version_by_role, load_df
 from ecnt_api.services.modeling import LEVELS
 from ecnt_api.utils import Storage, clean_json
+from ecnt_core.config import ROOT
 from ecnt_core.schemas import CANONICAL
+from ecnt_core.sources.dane import read_divipola_coords
+
+COORDS_FILE = ROOT / "data" / "external" / "divipola" / "divipola_municipios.json"
+
+
+@lru_cache(maxsize=1)
+def _coords() -> dict[str, tuple[float, float]]:
+    """Coordenadas de cabeceras municipales (opcional: si el archivo no existe, no hay mapa)."""
+    if not COORDS_FILE.exists():
+        return {}
+    c = read_divipola_coords(COORDS_FILE)
+    return {r.divipola: (float(r.lat), float(r.lon)) for r in c.itertuples()}
+
+
+def _with_coords(df: pd.DataFrame) -> pd.DataFrame:
+    coords = _coords()
+    df = df.copy()
+    df["lat"] = df["divipola"].map(lambda d: coords.get(d, (None, None))[0])
+    df["lon"] = df["divipola"].map(lambda d: coords.get(d, (None, None))[1])
+    return df
+
 
 DISCLAIMER = ("Herramienta de apoyo a la planificación en salud pública. Las estimaciones son territoriales y "
               "no constituyen diagnósticos individuales. La mortalidad registrada puede estar afectada por "
@@ -71,13 +95,17 @@ def dashboard(db: Session, storage: Storage, mv: VersionModelo) -> dict:
 
 
 def list_territories(db: Session, mv: VersionModelo, departamento: str | None = None,
-                     nivel: str | None = None) -> list[dict]:
+                     nivel: str | None = None, with_determinants: bool = False) -> list[dict]:
     p = predictions_df(db, mv)
+    if with_determinants:
+        rows = db.scalars(select(Prediccion).where(Prediccion.version_modelo_id == mv.id)).all()
+        dets = pd.DataFrame([{"divipola": r.divipola, **r.determinantes} for r in rows])
+        p = p.merge(dets, on="divipola", how="left")
     if departamento:
         p = p[p.departamento == departamento]
     if nivel:
         p = p[p.nivel == nivel]
-    return clean_json(p.sort_values(["departamento", "municipio"]))
+    return clean_json(_with_coords(p).sort_values(["departamento", "municipio"]))
 
 
 def territory_detail(db: Session, storage: Storage, mv: VersionModelo, divipola: str, role: str,
@@ -101,8 +129,10 @@ def territory_detail(db: Session, storage: Storage, mv: VersionModelo, divipola:
                             "conteo_suprimido": suppressed, "poblacion": r.get("pob_total"),
                             "pob_resto": r.get("pob_resto"), "periodo_pandemia": r.get("periodo_pandemia")})
     alerts = db.scalars(select(Alerta).where(Alerta.divipola == divipola).order_by(Alerta.id.desc())).all()
+    lat, lon = _coords().get(divipola, (None, None))
     return clean_json({
         "divipola": pred.divipola, "municipio": pred.municipio, "departamento": pred.departamento,
+        "lat": lat, "lon": lon,
         "periodo": pred.periodo, "poblacion": pred.poblacion, "observado": pred.observado, "predicho": pred.predicho,
         "lim_inf": pred.lim_inf, "lim_sup": pred.lim_sup, "nivel": pred.nivel, "tipo_prediccion": pred.tipo,
         "determinantes": dets, "historial": history,

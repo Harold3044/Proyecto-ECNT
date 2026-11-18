@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Fase actual | **Bloque C (F5 API): COMPLETADO, en espera de aprobación** |
-| Fases completadas | 0–4 (aprobadas); 5 (pendiente de aprobación) |
-| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque D (F6 Admin + F7 EPS). |
+| Fase actual | **Bloque D (F6 Admin + F7 EPS): COMPLETADO, en espera de aprobación** |
+| Fases completadas | 0–5 (aprobadas); 6, 7 (pendientes de aprobación) |
+| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque E (F8 integración y despliegue). |
 | Última actualización | 2026-11-17 |
 
 ## Registro por fase
@@ -90,6 +90,20 @@
 - **Error corregido**: `normalize_codes` rellenaba con ceros códigos inválidos ("123" → "00123"); ahora solo restaura el cero inicial que Excel elimina (4 → 5 dígitos).
 
 **Pruebas**: 62 aprobadas (16 de integración de la API con BD temporal), cobertura total 87 %; `ruff` sin errores. Prueba manual con servidor real (`uvicorn`): login EPS, dashboard, detalle territorial y 403 a `/datasets` para EPS.
+
+- Aprobado por el usuario (2026-11-17): Bloque C; autorizado el Bloque D con un intento de 30 min para el mapa.
+
+### Bloque D — F6 Ambiente Administrador + F7 Ambiente EPS (2026-11-17)
+
+- **Mapa**: coordenadas oficiales DIVIPOLA (datos.gov.co, recurso `gdxc-w37w`), 197/197 municipios; resuelto en unos 5 min. Mapa de burbujas por cabecera municipal (no polígonos).
+- `src/ecnt_client/`: cliente HTTP (único punto de contacto con la API) y utilidades de interfaz.
+- `apps/admin/` (puerto 8501): inicio, datasets, carga masiva con vista previa y validación, formulario territorial, estadística descriptiva, limpieza, selección de variables, partición y entrenamiento, comparación, gestión de modelos (aprobar/publicar/retirar), pruebas con datos nuevos, reglas de alerta, usuarios, auditoría.
+- `apps/eps/` (puerto 8502, independiente): dashboard, consulta territorial, análisis poblacional, mapa, alertas con seguimiento, exportación de informes.
+- API: `/territories?con_determinantes=true`, coordenadas en las respuestas territoriales, `parametros` por algoritmo en `/experiments/compare`.
+- `scripts/iniciar_plataforma.ps1`.
+- **Error de diseño corregido** (lo detectó una prueba): con hiperparámetros manuales, la interfaz entrenaba modelos por separado y se perdía la selección comparativa; ahora `/experiments/compare` acepta hiperparámetros por algoritmo.
+
+**Pruebas**: 85 aprobadas (incluye 23 de extremo a extremo de las interfaces: API real con uvicorn y cada vista renderizada con `AppTest`, más entrenamiento y seguimiento de alerta interactivos). Verificación con datos reales: las 12 vistas renderizan sin excepciones. Arranque real de los tres servicios comprobado (salud OK). `ruff` sin errores.
 
 ## Módulos implementados
 

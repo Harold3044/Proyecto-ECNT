@@ -58,12 +58,15 @@ def run_and_store(db: Session, storage: Storage, user: Usuario, version: Dataset
 
 
 def compare(db: Session, storage: Storage, user: Usuario, version: DatasetVersion, base_cfg: dict,
-            algorithms: list[str]) -> dict:
+            algorithms: list[str], params: dict[str, dict] | None = None) -> dict:
+    """Entrena varios algoritmos con la MISMA partición/variables/semilla (hiperparámetros propios de cada uno)."""
     group = uuid.uuid4().hex[:12]
+    params = params or {}
     rows = []
     created = []
     for a in algorithms:
-        exp, mv = run_and_store(db, storage, user, version, {**base_cfg, "algorithm": a}, group)
+        exp, mv = run_and_store(db, storage, user, version,
+                                {**base_cfg, "algorithm": a, "params": params.get(a, {})}, group)
         s = exp.resumen
         rows.append({"experimento_id": exp.id, "version_modelo_id": mv.id, **{k: s[k] for k in (
             "algoritmo", "nombre", "rmse_cv_media", "rmse_cv_de", "mae_cv_media", "r2_cv_media", "rmse_test",

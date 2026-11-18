@@ -33,9 +33,9 @@ def dashboard(request: Request, db: Session = Depends(get_db), _: Usuario = AnyU
 
 
 @router.get("/territories")
-def territories(departamento: str | None = None, nivel: str | None = None, db: Session = Depends(get_db),
-                _: Usuario = AnyUser):
-    return svc.list_territories(db, _published(db), departamento, nivel)
+def territories(departamento: str | None = None, nivel: str | None = None, con_determinantes: bool = False,
+                db: Session = Depends(get_db), _: Usuario = AnyUser):
+    return svc.list_territories(db, _published(db), departamento, nivel, con_determinantes)
 
 
 @router.get("/territories/compare")
