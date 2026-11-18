@@ -24,6 +24,9 @@ data/storage/*
 # Los datos sintéticos pequeños sí se versionan para pruebas reproducibles
 !data/synthetic/
 !data/synthetic/*.csv
+# Archivos de demostración (derivados de datos públicos del DANE, pequeños)
+!data/demo/
+!data/demo/*
 
 # Artefactos
 *.joblib
