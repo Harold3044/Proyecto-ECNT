@@ -12,7 +12,7 @@ from vistas import analisis, datos, modelos, sistema
 from ecnt_client import theme
 from ecnt_client.ui import api, call, login_gate, logout
 
-st.set_page_config(page_title="ECNT · Administrador", page_icon="🩺", layout="wide")
+st.set_page_config(page_title="ECNT · Administrador", page_icon="🩺", layout="wide", initial_sidebar_state="expanded")
 
 EPS_URL = os.environ.get("ECNT_EPS_APP_URL", "http://localhost:8502")
 user = login_gate("Sistema de vigilancia y predicción de riesgo de enfermedades crónicas no transmisibles",

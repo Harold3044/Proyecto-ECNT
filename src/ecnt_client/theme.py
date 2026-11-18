@@ -86,8 +86,12 @@ def apply_theme(env: str) -> None:
         Helvetica, Arial, sans-serif; color: #1E293B; }}
     .stApp, [data-testid="stAppViewContainer"] {{ background: #F1F5F9; }}
     [data-testid="stHeader"] {{ background: transparent; height: 2.5rem; }}
-    [data-testid="stToolbar"], [data-testid="stAppDeployButton"], [data-testid="stDecoration"], #MainMenu {{
+    /* Se ocultan SOLO el botón Deploy y el menú de Streamlit. La barra de herramientas (stToolbar) debe
+       seguir visible: contiene el botón para volver a abrir la barra lateral cuando se colapsa. */
+    [data-testid="stAppDeployButton"], [data-testid="stMainMenu"], [data-testid="stDecoration"], #MainMenu {{
         display: none !important; }}
+    [data-testid="stExpandSidebarButton"] {{ background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 6px;
+        color: {p['primary']}; }}
     [data-testid="stSidebarHeader"] {{ height: 1.2rem; min-height: 1.2rem; padding: 0.4rem; }}
     [data-testid="stMainBlockContainer"], .block-container {{ max-width: 1300px; padding: 1.2rem 2rem 3rem; }}
     h1, h2, h3, h4 {{ color: {p['primary']}; letter-spacing: -0.2px; }}

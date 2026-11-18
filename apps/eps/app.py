@@ -12,7 +12,7 @@ import vistas_eps as v
 from ecnt_client import theme
 from ecnt_client.ui import api, call, login_gate, logout
 
-st.set_page_config(page_title="ECNT · EPS", page_icon="🩺", layout="wide")
+st.set_page_config(page_title="ECNT · EPS", page_icon="🩺", layout="wide", initial_sidebar_state="expanded")
 
 ADMIN_URL = os.environ.get("ECNT_ADMIN_APP_URL", "http://localhost:8501")
 user = login_gate("Portal EPS · Riesgo territorial de enfermedades crónicas no transmisibles en el Caribe colombiano",
