@@ -39,6 +39,16 @@ copy .env.example .env      # edite los secretos
 pytest
 ```
 
+## Ejecución
+
+```bash
+python scripts/construir_dataset_caribe.py                    # 1. datasets reales desde fuentes DANE
+python scripts/cargar_datos_iniciales.py --aprobar-y-publicar  # 2. carga en la plataforma + modelo publicado
+uvicorn ecnt_api.main:app --port 8000                          # 3. API → http://localhost:8000/docs
+```
+
+Detalle de la API, endpoints y matriz de permisos: [docs/API.md](docs/API.md).
+
 ## Datos
 
 Los archivos de datos no se suben a Git. Las fuentes oficiales y la forma de obtenerlas están en [docs/datos/](docs/datos/). Todo dato sintético lleva el prefijo `SINTETICO_` y la bandera `es_sintetico`.

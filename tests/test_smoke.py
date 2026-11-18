@@ -2,11 +2,14 @@
 
 from fastapi.testclient import TestClient
 
-from ecnt_api.main import app
+from ecnt_api.config import Settings
+from ecnt_api.main import create_app
 
 
-def test_health():
-    r = TestClient(app).get("/health")
+def test_health(tmp_path):
+    s = Settings(database_url=f"sqlite:///{(tmp_path / 'h.db').as_posix()}", storage_dir=tmp_path)
+    with TestClient(create_app(s)) as c:
+        r = c.get("/health")
     assert r.status_code == 200
     assert r.json()["status"] == "ok"
 

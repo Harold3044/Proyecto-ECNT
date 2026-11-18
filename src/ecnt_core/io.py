@@ -22,7 +22,9 @@ def file_sha256(content: bytes) -> str:
 
 
 def normalize_codes(df: pd.DataFrame) -> pd.DataFrame:
-    """Asegura que los códigos DIVIPOLA sean texto con ceros a la izquierda."""
+    """Asegura que los códigos DIVIPOLA sean texto y restaura el cero inicial que Excel suele eliminar
+    (``8001`` → ``08001``). Solo se rellena UN dígito: un código más corto se deja tal cual para que la
+    validación lo reporte como inválido (no se "corrigen" silenciosamente datos erróneos)."""
     df = df.copy()
     for col, width in _TEXT_COLUMNS.items():
         if col in df.columns:
@@ -30,7 +32,8 @@ def normalize_codes(df: pd.DataFrame) -> pd.DataFrame:
             if pd.api.types.is_float_dtype(s):
                 s = s.astype("Int64")
             s = s.astype("string").str.strip().str.replace(r"\.0$", "", regex=True)
-            df[col] = s.where(s.isna(), s.str.zfill(width))
+            lost_zero = s.str.fullmatch(rf"\d{{{width - 1}}}").fillna(False)
+            df[col] = s.mask(lost_zero, "0" + s)
     return df
 
 

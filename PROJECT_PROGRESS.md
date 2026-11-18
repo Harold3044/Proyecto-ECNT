@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Fase actual | **Bloque B (F3 + F4): COMPLETADO, en espera de aprobación** |
-| Fases completadas | 0, 1, 2 (aprobadas); 3, 4 (pendientes de aprobación) |
-| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque C (F5 API). |
+| Fase actual | **Bloque C (F5 API): COMPLETADO, en espera de aprobación** |
+| Fases completadas | 0–4 (aprobadas); 5 (pendiente de aprobación) |
+| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque D (F6 Admin + F7 EPS). |
 | Última actualización | 2026-11-17 |
 
 ## Registro por fase
@@ -80,7 +80,18 @@
 **Archivos nuevos**: `src/ecnt_core/{schemas,io,validation,eda,cleaning,plots,splitting,features,models,evaluation,experiment,registry}.py`, `tests/{conftest,test_processing,test_ml}.py`, `scripts/experimento_base.py`, `docs/MOTOR_DATOS_ML.md`, `reports/experimento_base/*`.
 **Modificados**: `scripts/construir_dataset_caribe.py` (todo el país), `pyproject.toml` (largo de línea 120).
 
+- Aprobado por el usuario (2026-11-17): Bloque B, recomendación de modelo (RF con selección de variables) y criterios de alerta.
+
+### Bloque C — F5 Backend y API (2026-11-17)
+
+- `src/ecnt_api/`: `config`, `db`, `orm` (10 tablas), `security` (bcrypt + JWT + roles), `utils` (JSON seguro, auditoría, almacenamiento), `services/{datasets,modeling,alerts,territories}`, `routers/{auth,catalog,datasets,experiments,models,territories,alerts}`, `main` (fábrica, errores, arranque, `/audit`).
+- `scripts/cargar_datos_iniciales.py`: carga los 3 datasets reales, compara 5 modelos y, con `--aprobar-y-publicar`, aprueba y publica el elegido (Random Forest, modelo 4: 197 predicciones, 62 alertas).
+- `docs/API.md`: endpoints, matriz de permisos y reglas de negocio.
+- **Error corregido**: `normalize_codes` rellenaba con ceros códigos inválidos ("123" → "00123"); ahora solo restaura el cero inicial que Excel elimina (4 → 5 dígitos).
+
+**Pruebas**: 62 aprobadas (16 de integración de la API con BD temporal), cobertura total 87 %; `ruff` sin errores. Prueba manual con servidor real (`uvicorn`): login EPS, dashboard, detalle territorial y 403 a `/datasets` para EPS.
+
 ## Módulos implementados
 
 - `ecnt_core`: config, sources.dane, schemas, io, validation, eda, cleaning, plots, splitting, features, models, evaluation, experiment, registry.
-- `ecnt_api.main` (solo `/health`).
+- `ecnt_api`: API completa (autenticación, roles, datasets, EDA, limpieza, variables, experimentos, modelos, predicción, territorios, alertas, auditoría).
