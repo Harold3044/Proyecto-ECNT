@@ -13,6 +13,11 @@ Ingrese con su correo y contraseña. Si su rol no corresponde a la aplicación, 
 
 ---
 
+> **Diccionario de variables.** Si no entiende una variable, consulte `docs/datos/DICCIONARIO_VARIABLES.md`, la página
+> **Diccionario de variables** del ambiente EPS, la pestaña **Diccionario de variables** en *Datasets*, o el desplegable
+> *¿Qué significa cada variable?* en *Análisis estadístico*. En el formulario territorial, pase el cursor sobre el ícono
+> de ayuda de cada campo.
+
 ## Parte A. Ambiente Administrador / Investigador
 
 El flujo recomendado sigue el orden del menú:
@@ -27,7 +32,7 @@ El flujo recomendado sigue el orden del menú:
    - Media, mediana, moda, desviación, mínimos, máximos, cuartiles y atípicos.
    - Calidad: nulos, duplicados, rangos y tipos.
    - Distribuciones, frecuencias y correlaciones.
-5. **Limpieza y transformación**. Agregue pasos (eliminar duplicados, imputar, convertir tipos, recortar atípicos, log, codificar…) y aplíquelos. Se crea una versión nueva; el original no cambia.
+5. **Limpieza y transformación**. Agregue pasos (eliminar duplicados, imputar, convertir tipos, recortar atípicos, log, codificar…). Antes de aplicar, la **vista previa** muestra cuántas filas y columnas quedarían; si se perdería más del 20 % de las filas, el sistema lo advierte y pide confirmación (por ejemplo, eliminar duplicados usando como llave una columna de pocos valores). Se crea una versión nueva; el original no cambia.
 6. **Selección de variables**. Elija la partición y la semilla, y calcule el ranking de relevancia, la colinealidad (VIF) y la regresión múltiple. Todo se calcula **solo con los datos de entrenamiento**.
 7. **Partición y entrenamiento** (Modelos).
    - Elija la proporción de entrenamiento y prueba (70/30, 75/25, 80/20 o 90/10), la semilla y la estrategia (aleatoria o geográfica).
@@ -45,7 +50,7 @@ El flujo recomendado sigue el orden del menú:
 ## Parte B. Ambiente EPS
 
 1. **Dashboard**: territorios analizados, población, población rural dispersa y de centros poblados, tasa esperada, distribución por nivel (quintiles), evolución 2018–2021, departamentos y municipios con valores más altos, y alertas abiertas.
-2. **Consulta territorial**: elija departamento y municipio. Verá:
+2. **Territorios**: directorio de municipios ordenados por riesgo, con buscador por nombre o DIVIPOLA, filtro por departamento y por nivel, y marcas de *exceso* o *posible subregistro*. Debajo, en la **ficha territorial**, elija un municipio. Verá:
    - **Nivel**: de *muy bajo* a *muy alto*, comparado con los demás municipios del Caribe.
    - **Mortalidad esperada** e **intervalo del 90 %**.
    - **Mortalidad registrada**: si está por debajo del intervalo, revise un posible **subregistro**; si está por encima, hay un exceso que amerita revisión.
@@ -57,7 +62,8 @@ El flujo recomendado sigue el orden del menú:
    - **Cambiar el estado**: nueva → en revisión → asignada → en seguimiento → cerrada (o descartada). Asignar exige un responsable; cerrar o descartar exige una observación.
    - Cambiar la **prioridad**, asignar un **responsable** y registrar **observaciones**.
    - Consultar el **historial** completo y la evidencia que originó la alerta.
-6. **Exportar informes**: descargue en CSV el informe territorial (todo el Caribe o un departamento) y las alertas.
+6. **Diccionario de variables**: significado de cada indicador en lenguaje sencillo.
+7. **Exportar informes**: descargue en CSV el informe territorial (todo el Caribe o un departamento) y las alertas.
 
 ### Tipos de alerta
 

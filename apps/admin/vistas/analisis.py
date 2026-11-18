@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ecnt_client.ui import api, call, df, plot, validation_report
-from vistas.comun import version_selector
+from ecnt_client import theme
+from ecnt_client.ui import api, call, df, plot, validation_report, variable_dictionary
+from vistas.comun import describe, version_selector
 
 TARGET = "tasa_mort_ecnt_std"
 
 
 def exploratorio() -> None:
-    st.title("📊 Análisis exploratorio y estadística descriptiva")
+    theme.page_header("Análisis exploratorio y estadística descriptiva", "Estadísticas descriptivas, calidad de datos, distribuciones, frecuencias y correlaciones.")
     v = version_selector("eda")
     if not v:
         return
@@ -32,7 +33,13 @@ def exploratorio() -> None:
     with t1:
         st.caption("Media, mediana, moda, desviación estándar, mínimos, máximos, cuartiles, asimetría, curtosis "
                    "y atípicos según el criterio IQR (1,5 × rango intercuartílico).")
-        st.dataframe(df(e["descriptivas"]).round(3), width="stretch", hide_index=True)
+        names = {d["variable"]: d["descripcion"] + (f" ({d['unidad']})" if d["unidad"] else "")
+                 for d in e.get("diccionario", [])}
+        desc = df(e["descriptivas"])
+        if not desc.empty:
+            desc.insert(1, "nombre", desc["variable"].map(names))
+        st.dataframe(desc.round(3), width="stretch", hide_index=True)
+        variable_dictionary(e.get("diccionario"), f"eda_{v['id']}")
     with t2:
         st.caption("Valores nulos, duplicados, inconsistencias, rangos, tipos incorrectos e información insuficiente.")
         validation_report(e["validacion"])
@@ -112,7 +119,7 @@ def _step_form(op: str, columns: list[str]) -> dict | None:
 
 
 def limpieza() -> None:
-    st.title("🧹 Limpieza y transformación")
+    theme.page_header("Limpieza y transformación", "Tratamiento de faltantes, duplicados, formatos, atípicos y codificación con versionado.")
     st.caption("Cada aplicación crea una **nueva versión**; el dataset original se conserva. Para modelar, la "
                "imputación, el escalado y la codificación se ajustan automáticamente dentro del pipeline con datos "
                "de entrenamiento, por lo que aquí son opcionales.")
@@ -138,9 +145,23 @@ def limpieza() -> None:
     if steps:
         st.markdown("**Pasos a aplicar**")
         st.json(steps)
+        prev = call(api().post, f"/datasets/versions/{v['id']}/clean/preview", {"pasos": steps})
+        confirm_needed = False
+        if prev:
+            theme.section("Vista previa del resultado", "Simulación: todavía no se ha creado ninguna versión.")
+            k = st.columns(3)
+            k[0].metric("Filas", f"{prev['filas_antes']} → {prev['filas_despues']}")
+            k[1].metric("Columnas", f"{prev['columnas_antes']} → {prev['columnas_despues']}")
+            k[2].metric("Filas eliminadas", f"{100 * prev['pct_filas_eliminadas']:.1f} %")
+            for w in prev["advertencias"]:
+                theme.notice(f"<strong>Atención:</strong> {theme.esc(w)}", "danger", "alert")
+                confirm_needed = True
+            with st.expander("Primeras filas del resultado"):
+                st.dataframe(df(prev["vista_previa"]), width="stretch", hide_index=True)
+        ok_confirm = (not confirm_needed) or st.checkbox("Entiendo el impacto y quiero crear la versión de todos modos")
         desc = st.text_input("Descripción de la versión", placeholder="p. ej. Eliminación de duplicados por llave")
         c1, c2 = st.columns(2)
-        if c1.button("Aplicar y crear versión", type="primary"):
+        if c1.button("Aplicar y crear versión", type="primary", disabled=not prev or not ok_confirm):
             r = call(api().post, f"/datasets/versions/{v['id']}/clean", {"pasos": steps, "descripcion": desc})
             if r:
                 st.session_state[key] = []
@@ -154,7 +175,7 @@ def limpieza() -> None:
 
 
 def variables() -> None:
-    st.title("🎯 Selección de variables")
+    theme.page_header("Selección de variables", "Ranking de relevancia, multicolinealidad y regresión múltiple calculados solo con entrenamiento.")
     st.caption("El ranking, el VIF y la regresión OLS se calculan **solo con la partición de entrenamiento**, "
                "para evitar fuga de información hacia el conjunto de prueba.")
     v = version_selector("feat")
@@ -177,7 +198,9 @@ def variables() -> None:
         st.markdown("Criterios: |Spearman|, estadístico F, información mutua e importancia de Random Forest. "
                     "`rank_promedio` = 1 es la variable más relevante.")
         plot(r["grafico_ranking"], "rank")
-        st.dataframe(df(r["ranking"]), width="stretch", hide_index=True)
+        rk = df(r["ranking"])
+        rk.insert(1, "nombre", rk["variable"].map(lambda c: describe(c)))
+        st.dataframe(rk, width="stretch", hide_index=True)
     with t2:
         st.markdown("VIF > 10 indica colinealidad alta: conviene no usar juntas esas variables en la regresión lineal.")
         st.dataframe(df(r["vif"]), width="stretch", hide_index=True)

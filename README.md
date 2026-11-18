@@ -26,6 +26,8 @@ Proyecto de Aula de la asignatura Inteligencia Artificial en dónde se busca cre
 | `docs/` | Arquitectura, decisiones, plan, fuentes de datos y manuales |
 | `tests/` | Pruebas automatizadas |
 
+**¿Qué significa cada variable?** → [Diccionario de variables](docs/datos/DICCIONARIO_VARIABLES.md) (también disponible dentro de ambas aplicaciones).
+
 **Informe final:** [docs/INFORME_FINAL.md](docs/INFORME_FINAL.md) · Manuales: [técnico](docs/manuales/MANUAL_TECNICO.md) y [usuario](docs/manuales/MANUAL_USUARIO.md) · [Limitaciones](docs/LIMITACIONES.md) · [Seguridad](docs/SEGURIDAD.md)
 
 Documentación: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) · [docs/DECISIONES.md](docs/DECISIONES.md) · [docs/PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md) · [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md)

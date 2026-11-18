@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ecnt_client import theme
 from ecnt_client.ui import api, call, df, validation_report
 from vistas.comun import datasets, version_selector
 
@@ -11,7 +12,7 @@ ROLES_DS = {"(ninguno)": None, "modelado": "modelado", "panel histórico": "pane
 
 
 def gestion() -> None:
-    st.title("🗂️ Gestión de datasets")
+    theme.page_header("Gestión de datasets", "Historial de archivos cargados, versiones, linaje de transformaciones y diccionario de variables.")
     st.caption("Historial de archivos cargados, versiones, linaje de transformaciones y origen de los datos.")
     ds = datasets()
     if not ds:
@@ -36,7 +37,7 @@ def gestion() -> None:
     c3.metric("Versión", f"v{full['numero']}")
     c4.metric("Versión padre", full["padre_id"] or "— (original)")
     st.caption(f"Huella SHA‑256: `{full['sha256']}` · Fuente: {v['dataset']['fuente'] or '—'}")
-    t1, t2, t3 = st.tabs(["Datos", "Linaje", "Validación"])
+    t1, t2, t3, t4 = st.tabs(["Datos", "Linaje", "Validación", "Diccionario de variables"])
     with t1:
         rows = call(api().get, f"/datasets/versions/{v['id']}/rows", limit=200)
         if rows:
@@ -53,10 +54,18 @@ def gestion() -> None:
                 st.json(op)
     with t3:
         validation_report(full["validacion"])
+    with t4:
+        e = call(api().get, f"/datasets/versions/{v['id']}/eda", quiet=True)
+        if e:
+            st.caption("Qué significa cada columna de esta versión del dataset (fuente: diccionario del proyecto).")
+            d = df(e["diccionario"])
+            st.dataframe(d[["variable", "descripcion", "unidad", "grupo", "explicacion", "fuente"]].rename(columns={
+                "descripcion": "nombre", "explicacion": "qué significa"}), width="stretch", hide_index=True,
+                column_config={"qué significa": st.column_config.TextColumn(width="large")})
 
 
 def carga_masiva() -> None:
-    st.title("⬆️ Carga masiva de datos")
+    theme.page_header("Carga masiva de datos", "Importa archivos CSV o Excel; se validan antes de guardarse y el original se conserva.")
     st.caption("Archivos CSV (separador y codificación automáticos) o Excel. El archivo original se conserva "
                "sin cambios y se valida antes de guardarse.")
     f = st.file_uploader("Archivo", type=["csv", "xlsx", "xls"])
@@ -94,7 +103,7 @@ def carga_masiva() -> None:
 
 
 def formulario() -> None:
-    st.title("📝 Ingreso territorial por formulario")
+    theme.page_header("Ingreso territorial por formulario", "Registra una observación territorial (municipio y periodo) campo por campo.")
     st.info("Cada registro es una **observación territorial** (municipio y periodo), no una persona.")
     cat = call(api().get, "/catalog/variables")
     if not cat:
@@ -121,7 +130,7 @@ def formulario() -> None:
             label = f"{v['name']} ({v['unit']})" if v["unit"] else v["name"]
             lo = None if v["min"] is None else float(v["min"])
             hi = None if v["max"] is None else float(v["max"])
-            val = grid[i % 3].number_input(label, value=None, min_value=lo, max_value=hi, help=v["description"],
+            val = grid[i % 3].number_input(label, value=None, min_value=lo, max_value=hi, help=v["explicacion"] or v["description"],
                                            key=f"f_{v['name']}", format="%.4f")
             if val is not None:
                 rec[v["name"]] = val

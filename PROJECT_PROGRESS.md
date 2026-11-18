@@ -118,6 +118,15 @@
 
 **Pruebas**: 129 aprobadas, cobertura 88 % (`ecnt_core`, `ecnt_api`, `ecnt_client`); `ruff` sin errores.
 
+### Ajustes posteriores — 2026-11-18 (solicitud del usuario)
+
+- **Diseño** de ambas apps basado en `ecnt-frontend` (React del equipo): `src/ecnt_client/theme.py`, login rediseñado, barra lateral con marca y menú, barra superior con notificaciones, banner, tarjetas con iconos Lucide, avisos, tarjetas de alerta, directorio de territorios, gráficos de dona y barras apiladas. Tema de Streamlit en `.streamlit/config.toml` (EPS en verde por parámetro).
+- **Diccionario de variables**: `ecnt_core/schemas.py` con explicación de las 73 variables; `scripts/generar_diccionario.py` → `docs/datos/DICCIONARIO_VARIABLES.md`; visible en EDA, Datasets, formulario, selección de variables y página EPS "Diccionario de variables".
+- **Problema encontrado en uso real**: una limpieza "eliminar duplicados" con llave `periodo_pandemia` dejó el panel en 2 filas y vació el dashboard EPS. Corrección: la EPS usa la versión original del panel (AD‑18) y la limpieza tiene vista previa con advertencia y confirmación (AD‑19). La versión con 2 filas sigue en el historial (inmutable).
+- Verificación visual con capturas (Playwright + Edge) de login, dashboards, territorios, alertas, EDA y diccionario.
+
+**Pruebas**: 132 aprobadas; `ruff` sin errores.
+
 ## Módulos implementados
 
 - `ecnt_core`: config, sources.dane, schemas, io, validation, eda, cleaning, plots, splitting, features, models, evaluation, experiment, registry.

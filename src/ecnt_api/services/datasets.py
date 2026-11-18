@@ -103,6 +103,21 @@ def clean_version(db: Session, storage: Storage, user: Usuario, version: Dataset
                           descripcion or f"Limpieza: {', '.join(s['op'] for s in steps)}")
 
 
+def preview_clean(storage: Storage, version: DatasetVersion, steps: list[dict]) -> dict:
+    """Simula la limpieza SIN guardar: impacto en filas/columnas y advertencias (p. ej. pérdida masiva de filas)."""
+    base = load_df(storage, version)
+    df, log = cleaning.apply_steps(base, steps)
+    lost = 1 - len(df) / len(base) if len(base) else 0
+    warnings = []
+    if lost > 0.2:
+        warnings.append(f"Se eliminaría el {lost:.0%} de las filas ({len(base) - len(df)} de {len(base)}). Revise la "
+                        "llave o la condición: eliminar duplicados con una columna de pocos valores (p. ej. un "
+                        "indicador sí/no) deja solo una fila por valor.")
+    return clean_json({"filas_antes": len(base), "filas_despues": len(df), "columnas_antes": base.shape[1],
+                       "columnas_despues": df.shape[1], "pct_filas_eliminadas": lost, "pasos": log,
+                       "advertencias": warnings, "vista_previa": df.head(10)})
+
+
 def latest_version_by_role(db: Session, rol: str) -> DatasetVersion | None:
     ds = db.scalars(select(Dataset).where(Dataset.rol == rol).order_by(Dataset.id.desc())).first()
     return ds.versiones[-1] if ds and ds.versiones else None

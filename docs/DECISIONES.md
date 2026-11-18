@@ -84,6 +84,15 @@ Definición propuesta de ECNT (CIE‑10), a confirmar: HTA I10–I15, diabetes E
 | AD‑15 | Intervalo de predicción empírico del 90 % (cuantil del error fuera de pliegue) | Comunica la incertidumbre a la EPS |
 | AD‑16 | Variable objetivo `tasa_mort_ecnt_std` (aprobada por el usuario) | Ver `docs/datos/ESTRATEGIA_DATOS.md` |
 
+### Decisiones del 2026-11-18
+| ID | Decisión | Justificación |
+|---|---|---|
+| AD‑17 | Interfaces Streamlit rediseñadas con el diseño de `ecnt-frontend` (login, barra lateral, tarjetas, colores azul/verde) en lugar de migrar a React | Elegido por el usuario: conserva funciones y pruebas a un día de la entrega |
+| AD‑18 | La EPS ve siempre la versión **original** del panel histórico | Una limpieza exploratoria (p. ej. duplicados con llave errónea) no debe alterar lo que ve la EPS |
+| AD‑19 | Vista previa obligatoria de la limpieza con advertencia si se elimina más del 20 % de las filas | Se detectó una limpieza que redujo el panel de 788 a 2 filas |
+| AD‑20 | Diccionario de variables único en `ecnt_core/schemas.py` (explicación, unidad, fuente, grupo), expuesto en API, apps y Markdown | Las variables no eran comprensibles para el lector |
+| AD‑21 | "Pacientes" del diseño original → **Directorio de territorios** | La unidad de análisis es territorial; no se manejan personas |
+
 ### Respuestas recibidas
 - **D‑01**: entrega el jueves 19‑nov‑2026.
 - **D‑06**: repositorio nuevo (lo crea el usuario; el remoto se conecta cuando haya URL).

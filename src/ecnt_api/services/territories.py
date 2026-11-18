@@ -13,7 +13,7 @@ from ecnt_api.services.datasets import latest_version_by_role
 from ecnt_api.services.modeling import LEVELS
 from ecnt_api.utils import Storage, clean_json
 from ecnt_core.config import ROOT
-from ecnt_core.schemas import CANONICAL
+from ecnt_core.schemas import CANONICAL, describe_column
 from ecnt_core.sources.dane import read_divipola_coords
 
 COORDS_FILE = ROOT / "data" / "external" / "divipola" / "divipola_municipios.json"
@@ -62,8 +62,17 @@ def _load_cached(path: str, sha: str) -> pd.DataFrame:  # la huella invalida la 
 
 
 def _panel(db: Session, storage: Storage) -> pd.DataFrame | None:
+    """Panel histórico para la EPS: SIEMPRE la versión original (datos oficiales tal como se cargaron).
+
+    Las versiones de limpieza son exploratorias del investigador y no deben alterar lo que ve la EPS
+    (p. ej. una eliminación de duplicados con una llave equivocada). Para actualizar el panel de la EPS
+    se carga un nuevo dataset con rol 'panel'.
+    """
     v = latest_version_by_role(db, "panel")
-    return _load_cached(str(storage.abs(v.ruta)), v.sha256) if v else None
+    if v is None:
+        return None
+    original = v.dataset.versiones[0]
+    return _load_cached(str(storage.abs(original.ruta)), original.sha256)
 
 
 def dashboard(db: Session, storage: Storage, mv: VersionModelo) -> dict:
@@ -124,8 +133,7 @@ def territory_detail(db: Session, storage: Storage, mv: VersionModelo, divipola:
                                                Prediccion.divipola == divipola)).first()
     if pred is None:
         return None
-    dets = [{"variable": k, "valor": v, "descripcion": CANONICAL[k].description if k in CANONICAL else k,
-             "unidad": CANONICAL[k].unit if k in CANONICAL else ""} for k, v in pred.determinantes.items()]
+    dets = [{**describe_column(k), "valor": v} for k, v in pred.determinantes.items()]
     history = []
     panel = _panel(db, storage)
     if panel is not None:

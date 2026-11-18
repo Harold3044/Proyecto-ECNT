@@ -27,6 +27,23 @@ def version_selector(key: str, label: str = "Dataset y versión") -> dict | None
     return {**v, "dataset": d}
 
 
+def _catalog() -> dict[str, dict]:
+    cache = st.session_state.setdefault("_cat_vars", {})
+    if not cache:
+        cat = call(api().get, "/catalog/variables", quiet=True) or {}
+        for s in cat.get("variables", []) + cat.get("panel", []) + cat.get("resultados", []):
+            cache[s["name"]] = s
+    return cache
+
+
+def describe(col: str) -> str:
+    """Nombre legible de una variable (con unidad) según el diccionario del proyecto."""
+    s = _catalog().get(col)
+    if not s:
+        return col
+    return f"{s['description']} ({s['unit']})" if s.get("unit") else s["description"]
+
+
 def numeric_columns(version_id: int) -> list[str]:
     e = call(api().get, f"/datasets/versions/{version_id}/eda", quiet=True)
     return e["numericas"] if e else []

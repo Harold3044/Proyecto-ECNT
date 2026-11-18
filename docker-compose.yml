@@ -45,7 +45,7 @@ services:
   eps:
     <<: *app
     command: ["streamlit", "run", "apps/eps/app.py", "--server.port", "8502", "--server.address", "0.0.0.0",
-              "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+              "--server.headless", "true", "--browser.gatherUsageStats", "false", "--theme.primaryColor", "#065F46"]
     environment:
       ECNT_API_URL: http://api:8000
     ports:

@@ -4,46 +4,97 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ecnt_client import theme
 from ecnt_client.ui import api, call, df, fmt
 
 TIPOS = {"percentil_prediccion": {"percentil": 80}, "exceso_observado": {}, "posible_subregistro": {},
          "umbral_absoluto": {"umbral": 250}}
 
 
+def _link(url_path: str, label: str = "Abrir →") -> None:
+    """Enlace a otra página del menú (las páginas las registra app.py en la sesión)."""
+    pages = st.session_state.get("_pages", {})
+    if url_path in pages:
+        st.page_link(pages[url_path], label=label, icon=":material/arrow_outward:")
+
+
 def inicio() -> None:
-    st.title("🏠 Panel del administrador")
+    theme.welcome("Panel de administración", "Bienvenido al sistema ECNT",
+                  "Administra datasets, analiza información y gestiona los modelos de predicción del riesgo "
+                  "territorial de enfermedades crónicas no transmisibles.")
     ds = call(api().get, "/datasets") or []
     models = call(api().get, "/models") or []
     exps = call(api().get, "/experiments") or []
     alerts = call(api().get, "/alerts") or []
-    c = st.columns(5)
-    c[0].metric("Datasets", len(ds))
-    c[1].metric("Versiones de datos", sum(len(d["versiones"]) for d in ds))
-    c[2].metric("Experimentos", len(exps))
-    c[3].metric("Modelos aprobados/publicados", sum(m["estado"] in ("aprobado", "publicado") for m in models))
-    c[4].metric("Alertas abiertas", sum(a["estado"] not in ("cerrada", "descartada") for a in alerts))
+    registros = sum(d["versiones"][-1]["filas"] for d in ds if d["versiones"])
+    theme.stat_cards([
+        ("database", "blue", "Datasets cargados", len(ds), f"{sum(len(d['versiones']) for d in ds)} versiones"),
+        ("users", "green", "Registros territoriales", fmt(registros, 0), "Municipios-periodo (última versión)"),
+        ("brain", "purple", "Modelos entrenados", len(models),
+         f"{sum(m['estado'] in ('aprobado', 'publicado') for m in models)} aprobados o publicados"),
+        ("trending", "orange", "Alertas abiertas", sum(a["estado"] not in ("cerrada", "descartada") for a in alerts),
+         f"{len(exps)} experimentos realizados"),
+    ])
+
+    theme.section("Acciones rápidas", "Accede a las principales herramientas del sistema.")
+    c = st.columns(3)
+    for col, (ic, color, title, text, path) in zip(c, [
+        ("upload", "blue", "Cargar datasets", "Importa archivos CSV o Excel para comenzar el análisis.", "carga"),
+        ("chart", "green", "Análisis estadístico", "Explora variables y conoce las características de los datos.",
+         "eda"),
+        ("brain", "purple", "Entrenar modelos", "Configura y compara modelos de aprendizaje automático.",
+         "entrenamiento"),
+    ], strict=True):
+        with col:
+            theme.action_card(ic, color, title, text)
+            _link(path)
+
     pub = next((m for m in models if m["estado"] == "publicado"), None)
-    st.subheader("Modelo publicado")
+    theme.section("Modelo publicado", "Modelo que hoy consulta el ambiente EPS.")
     if pub:
         mt = pub["metricas"]
-        st.success(f"**#{pub['id']} · {pub['nombre']}** — objetivo `{pub['objetivo']}`")
-        k = st.columns(4)
-        k[0].metric("RMSE CV", fmt(mt["rmse_cv_media"], 2))
-        k[1].metric("RMSE prueba", fmt(mt["rmse_test"], 2))
-        k[2].metric("R² prueba", fmt(mt["r2_test"], 3))
-        k[3].metric("Intervalo 90 %", f"± {fmt(mt['semiancho_intervalo_90'], 1)}")
+        theme.stat_cards([
+            ("trophy", "purple", "Modelo", pub["algoritmo"].replace("_", " ").title(), f"#{pub['id']} · publicado"),
+            ("activity", "blue", "RMSE validación cruzada", fmt(mt["rmse_cv_media"], 2), "por 100.000 hab."),
+            ("trending", "green", "R² en prueba", fmt(mt["r2_test"], 3), f"RMSE prueba {fmt(mt['rmse_test'], 2)}"),
+            ("shield", "orange", "Intervalo de predicción", f"± {fmt(mt['semiancho_intervalo_90'], 1)}", "90 %"),
+        ])
     else:
-        st.warning("No hay modelo publicado: la EPS no puede consultar resultados.")
+        theme.notice("<strong>No hay modelo publicado:</strong> la EPS no puede consultar resultados.", "warning",
+                     "alert")
+
+    theme.section("Actividad reciente", "Últimos movimientos realizados en la plataforma.")
+    eventos = []
+    for d in ds:
+        for v in d["versiones"]:
+            eventos.append((v["creado"], "database", "blue", f"Dataset «{d['nombre']}» v{v['numero']}",
+                            v["descripcion"]))
+    for e in exps:
+        eventos.append((e["creado"], "brain", "purple", f"Experimento #{e['id']} · {e['algoritmo']}",
+                        f"RMSE prueba {fmt(e['rmse_test'], 2)} · R² {fmt(e['r2_test'], 3)}"))
+    eventos.sort(key=lambda x: x[0], reverse=True)
+    if not eventos:
+        theme.notice("No hay actividad reciente. Cuando cargues datasets o entrenes modelos, aparecerán aquí.",
+                     "info", "file")
+        _link("carga", "Cargar mi primer dataset →")
+    else:
+        rows = []
+        for fecha, ic, color, title, text in eventos[:8]:
+            bg, fg = theme.COLORS[color]
+            rows.append([f'<span class="ecnt-ico" style="width:28px;height:28px;background:{bg};color:{fg}">'
+                         f'{theme.icon(ic, 15)}</span>', f"<b>{theme.esc(title)}</b><br>"
+                         f"<span class='ecnt-muted'>{theme.esc(text)}</span>", theme.esc(fecha[:16].replace('T', ' '))])
+        theme.html_table(["", "Actividad", "Fecha"], rows)
     if any(d["es_sintetico"] for d in ds):
-        st.warning("Hay datasets **SINTÉTICOS** cargados: identifíquelos antes de usarlos en resultados.")
-    st.subheader("Flujo de trabajo")
-    st.markdown("1. **Carga** de datos → 2. **Estadística descriptiva** y calidad → 3. **Limpieza** (nuevas "
-                "versiones) → 4. **Selección de variables** → 5. **Partición y entrenamiento** → 6. **Comparación** "
-                "→ 7. **Aprobación y publicación** → 8. Pruebas con **datos nuevos**.")
+        theme.notice("Hay datasets <strong>SINTÉTICOS</strong> cargados: identifíquelos antes de usarlos en resultados.",
+                     "warning", "alert")
+    theme.notice("<strong>Importante:</strong> este sistema es una herramienta de apoyo para la vigilancia y la "
+                 "predicción del riesgo territorial de enfermedades crónicas no transmisibles. No reemplaza el "
+                 "diagnóstico ni la valoración de un profesional de salud.", "warning", "shield")
 
 
 def reglas_alerta() -> None:
-    st.title("🚨 Reglas de alerta")
+    theme.page_header("Reglas de alerta", "Criterios configurables y justificados para generar alertas poblacionales.")
     st.caption("Las alertas apoyan la planificación de acciones preventivas. No son diagnósticos médicos. "
                "Toda regla requiere una justificación metodológica.")
     rules = call(api().get, "/alert-rules") or []
@@ -87,7 +138,7 @@ def reglas_alerta() -> None:
 
 
 def usuarios() -> None:
-    st.title("👥 Usuarios")
+    theme.page_header("Usuarios", "Cuentas, roles y acceso a la plataforma.")
     users = call(api().get, "/users") or []
     st.dataframe(df(users), width="stretch", hide_index=True)
     with st.form("new_user"):
@@ -111,7 +162,7 @@ def usuarios() -> None:
 
 
 def auditoria() -> None:
-    st.title("📜 Registro de operaciones")
+    theme.page_header("Registro de operaciones", "Auditoría de las acciones realizadas en la plataforma.")
     accion = st.text_input("Filtrar por acción (p. ej. publicar_modelo)")
     log = call(api().get, "/audit", limit=500, accion=accion or None) or []
     st.dataframe(df(log), width="stretch", hide_index=True)

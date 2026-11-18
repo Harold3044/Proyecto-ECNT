@@ -253,3 +253,22 @@ def test_csv_con_bom_y_punto_y_coma(client, h):
     content = "﻿divipola;municipio;periodo;nbi_total\n08001;A;2018;20\n".encode()
     r = client.post("/datasets/validate", headers=h["admin"], files={"archivo": ("a.csv", io.BytesIO(content))})
     assert r.status_code == 200 and r.json()["columnas"][0] == "divipola"
+
+
+def test_vista_previa_de_limpieza_advierte_y_no_guarda(client, h, dataset):
+    vid = dataset["version"]["id"]
+    n_versions = len(client.get(f"/datasets/{dataset['dataset']['id']}", headers=h["admin"]).json()["versiones"])
+    r = client.post(f"/datasets/versions/{vid}/clean/preview", headers=h["investigador"],
+                    json={"pasos": [{"op": "drop_duplicates", "subset": ["es_sintetico"]}]})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["filas_despues"] == 1 and body["advertencias"]  # llave de un solo valor → pérdida masiva
+    versiones = client.get(f"/datasets/{dataset['dataset']['id']}", headers=h["admin"]).json()["versiones"]
+    assert len(versiones) == n_versions
+
+
+def test_catalogo_incluye_diccionario_explicado(client, h):
+    cat = client.get("/catalog/variables", headers=h["eps"]).json()
+    nombres = {v["name"]: v for v in cat["variables"] + cat["panel"] + cat["resultados"]}
+    assert {"comp_servicios_resto", "tasa_mort_ecnt_std", "pct_poblacion_resto", "def_ecnt", "predicho"} <= set(nombres)
+    assert all(v["explicacion"] for v in nombres.values())

@@ -7,7 +7,7 @@ from ecnt_api.security import ANY, require_roles
 from ecnt_api.services.alerts import RULE_TYPES
 from ecnt_core.cleaning import list_operations
 from ecnt_core.models import algorithms_catalog
-from ecnt_core.schemas import CANONICAL, DEFAULT_TARGET
+from ecnt_core.schemas import CANONICAL, DEFAULT_TARGET, OUTPUTS, PANEL
 from ecnt_core.splitting import ALLOWED_TEST_SIZES, STRATEGIES
 
 router = APIRouter(prefix="/catalog", tags=["catálogos"], dependencies=[Depends(require_roles(*ANY))])
@@ -15,7 +15,9 @@ router = APIRouter(prefix="/catalog", tags=["catálogos"], dependencies=[Depends
 
 @router.get("/variables")
 def variables():
-    return {"objetivo_por_defecto": DEFAULT_TARGET, "variables": [s.to_dict() for s in CANONICAL.values()]}
+    """Diccionario de variables: dataset de modelado, panel anual y resultados del modelo."""
+    return {"objetivo_por_defecto": DEFAULT_TARGET, "variables": [s.to_dict() for s in CANONICAL.values()],
+            "panel": [s.to_dict() for s in PANEL.values()], "resultados": [s.to_dict() for s in OUTPUTS.values()]}
 
 
 @router.get("/algorithms")

@@ -19,7 +19,7 @@ from ecnt_api.services import datasets as svc
 from ecnt_api.utils import audit, clean_json
 from ecnt_core import eda, features, plots, splitting
 from ecnt_core.experiment import default_features
-from ecnt_core.schemas import DEFAULT_TARGET
+from ecnt_core.schemas import DEFAULT_TARGET, dictionary_for
 from ecnt_core.validation import validate
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
@@ -144,6 +144,13 @@ def add_records(version_id: int, body: RecordsIn, request: Request, db: Session 
     return svc.version_dict(v)
 
 
+@router.post("/versions/{version_id}/clean/preview")
+def clean_preview(version_id: int, body: CleanIn, request: Request, db: Session = Depends(get_db),
+                  _: Usuario = Researcher):
+    """Vista previa de la limpieza: no crea versión."""
+    return svc.preview_clean(request.app.state.storage, _version(db, version_id), body.pasos)
+
+
 @router.post("/versions/{version_id}/clean", status_code=201)
 def clean(version_id: int, body: CleanIn, request: Request, db: Session = Depends(get_db), user: Usuario = Researcher):
     v = svc.clean_version(db, request.app.state.storage, user, _version(db, version_id), body.pasos, body.descripcion)
@@ -162,6 +169,7 @@ def eda_summary(version_id: int, request: Request, db: Session = Depends(get_db)
         "descriptivas": eda.numeric_summary(df),
         "categoricas": eda.categorical_columns(df),
         "numericas": eda.numeric_columns(df),
+        "diccionario": dictionary_for(list(df.columns)),
     })
 
 

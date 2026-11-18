@@ -10,12 +10,12 @@ import pandas as pd
 import plotly.io as pio
 import streamlit as st
 
-from ecnt_client import DEFAULT_URL, ApiClient, ApiError
+from ecnt_client import DEFAULT_URL, ApiClient, ApiError, theme
 
 ESTADO_COLOR = {"nueva": "🔴", "en_revision": "🟠", "asignada": "🟡", "en_seguimiento": "🔵", "cerrada": "🟢",
                 "descartada": "⚪"}
 PRIORIDAD_COLOR = {"alta": "🔴", "media": "🟠", "baja": "🟢"}
-NIVEL_COLOR = {"muy bajo": "#1a9850", "bajo": "#91cf60", "medio": "#fee08b", "alto": "#fc8d59", "muy alto": "#d73027"}
+NIVEL_COLOR = theme.RISK
 
 
 def api() -> ApiClient:
@@ -37,18 +37,31 @@ def call(fn: Callable, *args, quiet: bool = False, **kwargs) -> Any:
         return None
 
 
-def login_gate(app_name: str, allowed_roles: tuple[str, ...], subtitle: str = "") -> dict | None:
-    """Muestra el formulario de inicio de sesión si no hay sesión válida. Devuelve el usuario."""
+def login_gate(app_name: str, allowed_roles: tuple[str, ...], subtitle: str = "", env: str = "admin",
+               other_app: tuple[str, str] | None = None) -> dict | None:
+    """Pantalla de inicio de sesión (diseño ecnt-frontend). Devuelve el usuario si hay sesión válida."""
     if "api" in st.session_state and "usuario" in st.session_state:
         return st.session_state["usuario"]
-    st.title(app_name)
-    if subtitle:
-        st.caption(subtitle)
-    with st.form("login"):
-        email = st.text_input("Correo electrónico")
-        pwd = st.text_input("Contraseña", type="password")
-        url = st.text_input("URL de la API", value=DEFAULT_URL)
-        ok = st.form_submit_button("Ingresar", type="primary")
+    theme.apply_theme(env)
+    brand = "ECNT" if env == "admin" else "ECNT · EPS"
+    _, mid, _ = st.columns([1, 1.1, 1])
+    with mid, st.container(key="login_card"):
+        st.markdown(
+            f'<div class="ecnt-login-head"><div class="logo">{theme.icon("activity", 30)}</div><h1>{brand}</h1>'
+            f'<p class="subtitle">{theme.esc(subtitle or app_name)}</p>'
+            f'<div class="welcome">{theme.icon("heart", 18)}<span>Bienvenido</span></div>'
+            f'<p class="desc">Ingresa tus datos para acceder a la plataforma.</p></div>', unsafe_allow_html=True)
+        with st.form("login", border=False):
+            email = st.text_input("Correo electrónico", placeholder="usuario@ejemplo.com")
+            pwd = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña")
+            with st.expander("Configuración de conexión"):
+                url = st.text_input("URL de la API", value=DEFAULT_URL)
+            ok = st.form_submit_button("Iniciar sesión", type="primary", width="stretch")
+        if other_app:
+            st.link_button(other_app[0], other_app[1], width="stretch")
+        st.markdown(f'<div class="ecnt-login-foot"><div class="security">{theme.icon("shield", 15)}'
+                    f'<span>Acceso seguro a la plataforma</span></div>'
+                    f'<footer>Proyecto académico ECNT · Grupo 05 © 2026</footer></div>', unsafe_allow_html=True)
     if ok:
         client = ApiClient(url)
         data = call(client.login, email, pwd)
@@ -62,13 +75,27 @@ def login_gate(app_name: str, allowed_roles: tuple[str, ...], subtitle: str = ""
     return None
 
 
-def sidebar_user(user: dict) -> None:
-    with st.sidebar:
-        st.markdown(f"**{user['nombre']}**  \n`{user['email']}` · rol **{user['rol']}**")
-        if st.button("Cerrar sesión", width="stretch"):
-            for k in ("api", "usuario"):
-                st.session_state.pop(k, None)
-            st.rerun()
+def logout() -> None:
+    for k in ("api", "usuario", "_terr_cache"):
+        st.session_state.pop(k, None)
+    st.rerun()
+
+
+def variable_dictionary(rows: list[dict], key: str, title: str = "¿Qué significa cada variable?") -> None:
+    """Diccionario de variables legible (nombre, unidad, explicación) dentro de un desplegable con buscador."""
+    if not rows:
+        return
+    with st.expander(f"📖 {title}"):
+        q = st.text_input("Buscar variable", key=f"dic_{key}", placeholder="p. ej. servicios, rural, tasa")
+        d = pd.DataFrame(rows)
+        if q:
+            mask = d.apply(lambda r: q.lower() in " ".join(str(v).lower() for v in r.values), axis=1)
+            d = d[mask]
+        for grupo, g in d.groupby("grupo", sort=False):
+            st.markdown(f"**{grupo}**")
+            st.dataframe(g[["variable", "descripcion", "unidad", "explicacion"]].rename(columns={
+                "descripcion": "nombre", "explicacion": "qué significa"}), width="stretch", hide_index=True,
+                column_config={"qué significa": st.column_config.TextColumn(width="large")})
 
 
 def plot(fig_json: dict | None, key: str | None = None) -> None:

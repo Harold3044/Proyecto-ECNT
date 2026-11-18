@@ -28,7 +28,7 @@ ADMIN_VIEWS = [("sistema", "inicio"), ("datos", "gestion"), ("datos", "carga_mas
                ("modelos", "entrenamiento"), ("modelos", "comparacion"), ("modelos", "gestion"),
                ("modelos", "datos_nuevos"), ("sistema", "reglas_alerta"), ("sistema", "usuarios"),
                ("sistema", "auditoria")]
-EPS_VIEWS = ["dashboard", "consulta", "analisis", "mapa", "alertas", "informes"]
+EPS_VIEWS = ["dashboard", "consulta", "analisis", "mapa", "alertas", "informes", "diccionario"]
 
 
 def _free_port() -> int:

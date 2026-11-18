@@ -5,8 +5,9 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from ecnt_client import theme
 from ecnt_client.ui import api, call, df, fmt, plot
-from vistas.comun import datasets, numeric_columns, version_selector
+from vistas.comun import datasets, describe, numeric_columns, version_selector
 
 TARGET = "tasa_mort_ecnt_std"
 NON_PRED = {"divipola", "cod_depto", "def_ecnt_2018_2019", "personas_anio_2018_2019", "anios_con_registro", TARGET}
@@ -49,7 +50,7 @@ def _show_comparison(res: dict) -> None:
 
 
 def entrenamiento() -> None:
-    st.title("⚙️ Partición y entrenamiento")
+    theme.page_header("Partición y entrenamiento", "Configura la partición, las variables, los modelos y sus hiperparámetros.")
     v = version_selector("train")
     if not v:
         return
@@ -75,7 +76,7 @@ def entrenamiento() -> None:
 
     st.subheader("2. Variables")
     target = st.text_input("Variable objetivo", value=TARGET)
-    feats = st.multiselect("Variables predictoras", [c for c in cols if c != target],
+    feats = st.multiselect("Variables predictoras", [c for c in cols if c != target], format_func=describe,
                            default=[c for c in cols if c != target])
     c1, c2 = st.columns(2)
     sel = c1.selectbox("Selección automática (dentro de entrenamiento)", ["none", "ranking_top_k", "kbest"],
@@ -160,7 +161,7 @@ def _experiment_detail(exp_id: int) -> None:
 
 
 def comparacion() -> None:
-    st.title("📈 Comparación y evaluación de modelos")
+    theme.page_header("Comparación y evaluación de modelos", "MAE, RMSE y R², gráficos comparativos, real vs. predicho y análisis de residuos.")
     exps = call(api().get, "/experiments") or []
     if not exps:
         st.info("Aún no hay experimentos.")
@@ -189,7 +190,7 @@ def comparacion() -> None:
 
 
 def gestion() -> None:
-    st.title("🏷️ Gestión de modelos")
+    theme.page_header("Gestión de modelos", "Versiones, comparación, aprobación con justificación y publicación para la EPS.")
     st.caption("Ciclo de vida: evaluado → **aprobado** (validación humana con justificación) → **publicado** "
                "(lo consume la EPS) → retirado. Publicar un modelo retira automáticamente el publicado anterior.")
     user = st.session_state["usuario"]
@@ -249,7 +250,7 @@ def gestion() -> None:
 
 
 def datos_nuevos() -> None:
-    st.title("🧾 Pruebas con datos nuevos")
+    theme.page_header("Pruebas con datos nuevos", "Predicción con datos que no participaron en el entrenamiento.")
     st.caption("Aplica automáticamente las transformaciones aprendidas en entrenamiento a datos que no participaron "
                "en él. Si el archivo incluye la variable objetivo, se calculan métricas independientes.")
     models = [m for m in (call(api().get, "/models") or []) if m["estado"] != "retirado"]

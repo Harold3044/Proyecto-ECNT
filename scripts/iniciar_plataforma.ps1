@@ -7,7 +7,7 @@ if (-not (Test-Path $py)) { Write-Error "No existe .venv. Ejecute primero la ins
 Start-Process -WorkingDirectory $root -FilePath $py -ArgumentList "-m uvicorn ecnt_api.main:app --port 8000"
 Start-Sleep -Seconds 3
 Start-Process -WorkingDirectory $root -FilePath $py -ArgumentList "-m streamlit run apps/admin/app.py --server.port 8501"
-Start-Process -WorkingDirectory $root -FilePath $py -ArgumentList "-m streamlit run apps/eps/app.py --server.port 8502"
+Start-Process -WorkingDirectory $root -FilePath $py -ArgumentList "-m streamlit run apps/eps/app.py --server.port 8502 --theme.primaryColor #065F46"
 
 Write-Host "API:            http://localhost:8000/docs"
 Write-Host "Administrador:  http://localhost:8501"
