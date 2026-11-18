@@ -1,0 +1,61 @@
+{
+  "url": "http://localhost:18000",
+  "login_ms": 303.6,
+  "resultados": [
+    {
+      "endpoint": "/health",
+      "peticiones": 200,
+      "concurrencia": 10,
+      "exitosas": 200,
+      "media_ms": 36.4,
+      "p50_ms": 35.5,
+      "p95_ms": 61.2,
+      "max_ms": 75.9,
+      "peticiones_por_s": 261.0
+    },
+    {
+      "endpoint": "/dashboard",
+      "peticiones": 200,
+      "concurrencia": 10,
+      "exitosas": 200,
+      "media_ms": 1415.9,
+      "p50_ms": 1402.0,
+      "p95_ms": 1668.3,
+      "max_ms": 1765.0,
+      "peticiones_por_s": 7.0
+    },
+    {
+      "endpoint": "/territories?con_determinantes=true",
+      "peticiones": 200,
+      "concurrencia": 10,
+      "exitosas": 200,
+      "media_ms": 1283.0,
+      "p50_ms": 1259.6,
+      "p95_ms": 1550.7,
+      "max_ms": 1780.1,
+      "peticiones_por_s": 7.7
+    },
+    {
+      "endpoint": "/territories/88564",
+      "peticiones": 200,
+      "concurrencia": 10,
+      "exitosas": 200,
+      "media_ms": 280.2,
+      "p50_ms": 292.1,
+      "p95_ms": 417.8,
+      "max_ms": 488.5,
+      "peticiones_por_s": 35.0
+    },
+    {
+      "endpoint": "/alerts",
+      "peticiones": 200,
+      "concurrencia": 10,
+      "exitosas": 200,
+      "media_ms": 556.1,
+      "p50_ms": 524.0,
+      "p95_ms": 796.0,
+      "max_ms": 888.6,
+      "peticiones_por_s": 17.8
+    }
+  ]
+}

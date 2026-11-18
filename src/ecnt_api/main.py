@@ -57,6 +57,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        defaults = Settings.model_fields
+        if settings.jwt_secret == defaults["jwt_secret"].default:
+            log.warning("SEGURIDAD: se usa el ECNT_JWT_SECRET por defecto. Defina uno propio en .env "
+                        "antes de desplegar.")
+        if settings.bootstrap_admin_password == defaults["bootstrap_admin_password"].default:
+            log.warning("SEGURIDAD: contraseña inicial de administrador por defecto; cámbiela en .env.")
         Base.metadata.create_all(engine)
         bootstrap(SessionLocal, settings)
         yield

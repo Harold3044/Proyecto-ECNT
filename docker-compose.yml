@@ -1,0 +1,55 @@
+# Despliegue de la plataforma ECNT.
+#   1. Defina al menos ECNT_JWT_SECRET (y las contraseñas iniciales) en un archivo .env (ver .env.example).
+#   2. docker compose up --build
+# Servicios: API http://localhost:8000/docs · Administrador http://localhost:8501 · EPS http://localhost:8502
+# La carpeta ./data se monta como volumen: base de datos SQLite, datasets versionados y modelos persisten.
+
+x-app: &app
+  build: .
+  image: ecnt-plataforma:0.1.0
+  volumes:
+    - ./data:/app/data
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *app
+    command: ["uvicorn", "ecnt_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      ECNT_JWT_SECRET: ${ECNT_JWT_SECRET:?Defina ECNT_JWT_SECRET en .env}
+      ECNT_DATABASE_URL: ${ECNT_DATABASE_URL:-sqlite:////app/data/storage/ecnt.db}
+      ECNT_STORAGE_DIR: /app/data/storage
+      ECNT_BOOTSTRAP_ADMIN_PASSWORD: ${ECNT_BOOTSTRAP_ADMIN_PASSWORD:-Admin2026!}
+      ECNT_BOOTSTRAP_INVESTIGADOR_PASSWORD: ${ECNT_BOOTSTRAP_INVESTIGADOR_PASSWORD:-Inv2026!}
+      ECNT_BOOTSTRAP_EPS_PASSWORD: ${ECNT_BOOTSTRAP_EPS_PASSWORD:-Eps2026!}
+    ports:
+      - "${ECNT_API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  admin:
+    <<: *app
+    command: ["streamlit", "run", "apps/admin/app.py", "--server.port", "8501", "--server.address", "0.0.0.0",
+              "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    environment:
+      ECNT_API_URL: http://api:8000
+    ports:
+      - "${ECNT_ADMIN_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  eps:
+    <<: *app
+    command: ["streamlit", "run", "apps/eps/app.py", "--server.port", "8502", "--server.address", "0.0.0.0",
+              "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    environment:
+      ECNT_API_URL: http://api:8000
+    ports:
+      - "${ECNT_EPS_PORT:-8502}:8502"
+    depends_on:
+      api:
+        condition: service_healthy

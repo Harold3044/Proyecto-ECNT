@@ -26,6 +26,8 @@ Proyecto de Aula de la asignatura Inteligencia Artificial en dónde se busca cre
 | `docs/` | Arquitectura, decisiones, plan, fuentes de datos y manuales |
 | `tests/` | Pruebas automatizadas |
 
+**Informe final:** [docs/INFORME_FINAL.md](docs/INFORME_FINAL.md) · Manuales: [técnico](docs/manuales/MANUAL_TECNICO.md) y [usuario](docs/manuales/MANUAL_USUARIO.md) · [Limitaciones](docs/LIMITACIONES.md) · [Seguridad](docs/SEGURIDAD.md)
+
 Documentación: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) · [docs/DECISIONES.md](docs/DECISIONES.md) · [docs/PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md) · [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md)
 
 ## Instalación (Windows)
@@ -50,6 +52,8 @@ streamlit run apps/eps/app.py --server.port 8502               # 5. Ambiente EPS
 ```
 
 En Windows, los pasos 3 a 5 se inician juntos con `powershell -ExecutionPolicy Bypass -File scripts\iniciar_plataforma.ps1`.
+
+Con Docker (después de los pasos 1 y 2): defina `ECNT_JWT_SECRET` en `.env` y ejecute `docker compose up --build`.
 
 | Usuario de desarrollo | Contraseña | Acceso |
 |---|---|---|

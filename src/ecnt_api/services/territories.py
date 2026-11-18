@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ecnt_api.orm import Alerta, Prediccion, VersionModelo
-from ecnt_api.services.datasets import latest_version_by_role, load_df
+from ecnt_api.services.datasets import latest_version_by_role
 from ecnt_api.services.modeling import LEVELS
 from ecnt_api.utils import Storage, clean_json
 from ecnt_core.config import ROOT
@@ -30,10 +30,8 @@ def _coords() -> dict[str, tuple[float, float]]:
 
 def _with_coords(df: pd.DataFrame) -> pd.DataFrame:
     coords = _coords()
-    df = df.copy()
-    df["lat"] = df["divipola"].map(lambda d: coords.get(d, (None, None))[0])
-    df["lon"] = df["divipola"].map(lambda d: coords.get(d, (None, None))[1])
-    return df
+    return df.assign(lat=df["divipola"].map({k: v[0] for k, v in coords.items()}),
+                     lon=df["divipola"].map({k: v[1] for k, v in coords.items()}))
 
 
 DISCLAIMER = ("Herramienta de apoyo a la planificación en salud pública. Las estimaciones son territoriales y "
@@ -41,16 +39,31 @@ DISCLAIMER = ("Herramienta de apoyo a la planificación en salud pública. Las e
               "subregistro, en especial en zonas rurales dispersas.")
 
 
-def predictions_df(db: Session, mv: VersionModelo) -> pd.DataFrame:
-    rows = db.scalars(select(Prediccion).where(Prediccion.version_modelo_id == mv.id)).all()
-    return pd.DataFrame([{c: getattr(r, c) for c in ("divipola", "municipio", "departamento", "periodo",
-                                                     "poblacion", "observado", "predicho", "lim_inf", "lim_sup",
-                                                     "nivel", "tipo")} for r in rows])
+PRED_COLS = ("divipola", "municipio", "departamento", "periodo", "poblacion", "observado", "predicho", "lim_inf",
+             "lim_sup", "nivel", "tipo")
+
+
+def predictions_df(db: Session, mv: VersionModelo, with_determinants: bool = False) -> pd.DataFrame:
+    """Predicciones del modelo en UNA consulta de columnas (sin materializar objetos ORM)."""
+    cols = [getattr(Prediccion, c) for c in PRED_COLS]
+    if with_determinants:
+        cols.append(Prediccion.determinantes)
+    rows = db.execute(select(*cols).where(Prediccion.version_modelo_id == mv.id)).all()
+    df = pd.DataFrame(rows, columns=[*PRED_COLS, *(["determinantes"] if with_determinants else [])])
+    if with_determinants and not df.empty:
+        dets = pd.DataFrame(df.pop("determinantes").tolist(), index=df.index)
+        df = pd.concat([df, dets], axis=1)
+    return df
+
+
+@lru_cache(maxsize=4)
+def _load_cached(path: str, sha: str) -> pd.DataFrame:  # la huella invalida la caché si cambia la versión
+    return pd.read_parquet(path)
 
 
 def _panel(db: Session, storage: Storage) -> pd.DataFrame | None:
     v = latest_version_by_role(db, "panel")
-    return load_df(storage, v) if v else None
+    return _load_cached(str(storage.abs(v.ruta)), v.sha256) if v else None
 
 
 def dashboard(db: Session, storage: Storage, mv: VersionModelo) -> dict:
@@ -58,19 +71,20 @@ def dashboard(db: Session, storage: Storage, mv: VersionModelo) -> dict:
     pop = p["poblacion"].fillna(0)
     weighted = float((p["predicho"] * pop).sum() / pop.sum()) if pop.sum() else None
     dist = p["nivel"].value_counts().reindex(LEVELS, fill_value=0)
-    by_dep = (p.groupby("departamento").apply(
-        lambda d: pd.Series({"territorios": len(d), "poblacion": d.poblacion.sum(),
-                             "predicho_medio": d.predicho.mean(), "observado_medio": d.observado.mean()}),
-        include_groups=False).reset_index().sort_values("predicho_medio", ascending=False))
+    by_dep = (p.groupby("departamento")
+              .agg(territorios=("divipola", "count"), poblacion=("poblacion", "sum"),
+                   predicho_medio=("predicho", "mean"), observado_medio=("observado", "mean"))
+              .reset_index().sort_values("predicho_medio", ascending=False))
     top = p.sort_values("predicho", ascending=False).head(10)
     evolution = None
     panel = _panel(db, storage)
     if panel is not None and "tasa_ecnt_std" in panel:
-        ev = panel.groupby("anio").apply(
-            lambda d: pd.Series({"tasa_mediana": d.tasa_ecnt_std.median(),
-                                 "tasa_ponderada": (d.tasa_ecnt_std * d.pob_total).sum() / d.pob_total.sum(),
-                                 "defunciones_ecnt": d.def_ecnt.sum()}), include_groups=False).reset_index()
-        evolution = ev
+        pw = panel.assign(_w=panel.tasa_ecnt_std * panel.pob_total,
+                          _p=panel.pob_total.where(panel.tasa_ecnt_std.notna()))
+        g = pw.groupby("anio")
+        evolution = pd.DataFrame({"tasa_mediana": g.tasa_ecnt_std.median(),
+                                  "tasa_ponderada": g._w.sum() / g._p.sum(),
+                                  "defunciones_ecnt": g.def_ecnt.sum()}).reset_index()
     alerts = db.execute(select(Alerta.prioridad, func.count()).where(Alerta.estado.not_in(["cerrada", "descartada"]))
                         .group_by(Alerta.prioridad)).all()
     resto = None
@@ -96,11 +110,7 @@ def dashboard(db: Session, storage: Storage, mv: VersionModelo) -> dict:
 
 def list_territories(db: Session, mv: VersionModelo, departamento: str | None = None,
                      nivel: str | None = None, with_determinants: bool = False) -> list[dict]:
-    p = predictions_df(db, mv)
-    if with_determinants:
-        rows = db.scalars(select(Prediccion).where(Prediccion.version_modelo_id == mv.id)).all()
-        dets = pd.DataFrame([{"divipola": r.divipola, **r.determinantes} for r in rows])
-        p = p.merge(dets, on="divipola", how="left")
+    p = predictions_df(db, mv, with_determinants)
     if departamento:
         p = p[p.departamento == departamento]
     if nivel:

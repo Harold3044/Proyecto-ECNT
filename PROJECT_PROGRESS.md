@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| Fase actual | **Bloque D (F6 Admin + F7 EPS): COMPLETADO, en espera de aprobación** |
-| Fases completadas | 0–5 (aprobadas); 6, 7 (pendientes de aprobación) |
-| Próxima actividad autorizada | Ninguna. Se requiere autorización explícita para el Bloque E (F8 integración y despliegue). |
+| Fase actual | **Bloque E (F8 integración, pruebas y despliegue): COMPLETADO — proyecto terminado, en espera de aprobación final** |
+| Fases completadas | 0–7 (aprobadas); 8 (pendiente de aprobación) |
+| Próxima actividad autorizada | Ninguna. |
 | Última actualización | 2026-11-17 |
 
 ## Registro por fase
@@ -104,6 +104,19 @@
 - **Error de diseño corregido** (lo detectó una prueba): con hiperparámetros manuales, la interfaz entrenaba modelos por separado y se perdía la selección comparativa; ahora `/experiments/compare` acepta hiperparámetros por algoritmo.
 
 **Pruebas**: 85 aprobadas (incluye 23 de extremo a extremo de las interfaces: API real con uvicorn y cada vista renderizada con `AppTest`, más entrenamiento y seguimiento de alerta interactivos). Verificación con datos reales: las 12 vistas renderizan sin excepciones. Arranque real de los tres servicios comprobado (salud OK). `ruff` sin errores.
+
+- Aprobado por el usuario (2026-11-17): Bloque D; autorizado el Bloque E.
+
+### Bloque E — F8 Integración, pruebas y despliegue (2026-11-17)
+
+- **Docker**: `Dockerfile` (imagen única, usuario sin privilegios), `.dockerignore`, `docker-compose.yml` (api, admin, eps; volumen `./data`; puertos configurables; `ECNT_JWT_SECRET` obligatorio). Construido y ejecutado con datos reales: API sana; las apps se conectan por la red interna.
+- **Permisos**: `tests/test_permissions.py`, matriz de 40 endpoints × 3 roles + sin sesión, tokens manipulados o vencidos, rol elevado en el token, usuarios desactivados.
+- **Seguridad**: `pip-audit` sin vulnerabilidades; advertencias al arrancar con secretos por defecto; `docs/SEGURIDAD.md`.
+- **Rendimiento**: `scripts/prueba_rendimiento.py` → `reports/rendimiento_local.json` y `reports/rendimiento_docker.json`. Optimizaciones en `services/territories.py` (consulta por columnas, caché del panel, agregaciones vectorizadas).
+- **Corrección importante**: la URL por defecto de las apps pasó de `localhost` a `127.0.0.1` (en Windows añadía ~2 s por petición).
+- **Documentación**: `docs/manuales/MANUAL_TECNICO.md`, `docs/manuales/MANUAL_USUARIO.md`, `docs/LIMITACIONES.md`, `docs/INFORME_FINAL.md`.
+
+**Pruebas**: 129 aprobadas, cobertura 88 % (`ecnt_core`, `ecnt_api`, `ecnt_client`); `ruff` sin errores.
 
 ## Módulos implementados
 

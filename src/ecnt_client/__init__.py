@@ -7,7 +7,9 @@ from typing import Any
 
 import requests
 
-DEFAULT_URL = os.environ.get("ECNT_API_URL", "http://localhost:8000")
+# 127.0.0.1 y no "localhost": en Windows "localhost" intenta primero IPv6 (::1) y, como uvicorn escucha en
+# IPv4, cada petición esperaba ~2 s antes de reintentar por IPv4 (medido en la prueba de rendimiento).
+DEFAULT_URL = os.environ.get("ECNT_API_URL", "http://127.0.0.1:8000")
 
 
 class ApiError(Exception):
